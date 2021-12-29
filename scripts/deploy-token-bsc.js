@@ -16,7 +16,7 @@ async function main() {
   console.log("step1");
 
   const wChickToken = await hre.ethers.getContractFactory("WChickToken");
-  const tokenDeploy = await wChickToken.deploy("Solchick test", "wLOUIS", 10 ** 9);
+  const tokenDeploy = await wChickToken.deploy("Solchick test", "wBLOUIS", 10 ** 9);
 
   await tokenDeploy.deployed();
 

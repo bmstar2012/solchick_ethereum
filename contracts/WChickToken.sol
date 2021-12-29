@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 import "./token/behaviours/ERC20Mintable.sol";
 
-contract BMToken is ERC20Burnable, ERC20Mintable, Ownable {
+contract WChickToken is ERC20Burnable, ERC20Mintable, Ownable {
     constructor(string memory name, string memory symbol, uint256 initialBalance) ERC20(name, symbol) {
-        require(initialBalance > 0, "BMToken: Supply cannot be zero");
+        require(initialBalance > 0, "wChick: Supply cannot be zero");
         _mint(msg.sender, initialBalance * (10 ** decimals()));
     }
 
@@ -21,8 +21,8 @@ contract BMToken is ERC20Burnable, ERC20Mintable, Ownable {
         return 9;
     }
 
-    function migrate(address recipient, uint256 amount, string memory nonce) public returns (bool) {
-        require(bytes(nonce).length > 0, "Nonce is required");
+    function migrate(address recipient, uint256 amount, uint nonce) public returns (bool) {
+        require(nonce > 0, "Nonce is required");
         return transfer(recipient, amount);
     }
 }
