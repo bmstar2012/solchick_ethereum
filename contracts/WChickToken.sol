@@ -1,14 +1,16 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-
 import "./token/behaviours/ERC20Mintable.sol";
+import "./token/ChickBase.sol";
 
-contract WChickToken is ERC20Burnable, ERC20Mintable, Ownable {
-    constructor(string memory name, string memory symbol, uint256 initialBalance) ERC20(name, symbol) {
+contract WChickToken is ERC20Mintable, Ownable {
+    address internal _serviceAddress = 0x0000000000000000000000000000000000000000;
+    address internal _presaleAddress = 0x0000000000000000000000000000000000000000;
+    uint16 internal _feePercent = 15; //1.5%
+
+    constructor(string memory name, string memory symbol, uint256 initialBalance) ChickBase(name, symbol) {
         require(initialBalance > 0, "wChick: Supply cannot be zero");
         _mint(msg.sender, initialBalance * (10 ** decimals()));
     }
@@ -21,8 +23,73 @@ contract WChickToken is ERC20Burnable, ERC20Mintable, Ownable {
         return 9;
     }
 
-    function migrate(address recipient, uint256 amount, uint nonce) public returns (bool) {
-        require(nonce > 0, "Nonce is required");
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _beforeTokenTransfer(sender, recipient, amount);
+
+        uint256 senderBalance = _balances[sender];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+
+        uint256 receiveAmount = amount;
+        uint256 transferAmount = amount;
+        uint256 feeAmount = 0;
+        if (sender != _presaleAddress && _serviceAddress != address(0) && _feePercent > 0) {
+            feeAmount = amount * _feePercent / 1000;
+            emit Transfer(sender, _serviceAddress, feeAmount);
+
+            receiveAmount = amount - feeAmount;
+            if (sender == _serviceAddress) {
+                transferAmount = receiveAmount;
+                feeAmount = 0;
+            }
+        }
+
+        unchecked {
+            _balances[sender] = senderBalance - transferAmount;
+        }
+
+        if (feeAmount > 0) {
+            _balances[_serviceAddress] += feeAmount;
+        }
+        _balances[recipient] += receiveAmount;
+
+        emit Transfer(sender, recipient, receiveAmount);
+
+        _afterTokenTransfer(sender, recipient, amount);
+    }
+
+    function migrate(address recipient, uint256 amount, uint8 targetChainId, uint256 targetAddress) public returns (bool) {
+        require(targetChainId > 0 && targetAddress > 0, "target is required");
         return transfer(recipient, amount);
+    }
+
+    function setService(address value) public onlyOwner {
+        _serviceAddress = value;
+    }
+
+    function setPresale(address value) public onlyOwner {
+        _presaleAddress = value;
+    }
+
+    function setServiceAccount(uint16 feePercent) public onlyOwner {
+        _feePercent = feePercent;
+    }
+
+    function fee() public view returns (uint16) {
+        return _feePercent;
+    }
+
+    function service() public view returns (address) {
+        return _serviceAddress;
+    }
+
+    function presale() public view returns (address) {
+        return _presaleAddress;
     }
 }

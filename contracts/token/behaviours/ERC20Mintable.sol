@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../ChickBase.sol";
 
 /**
  * @title ERC20Mintable
  * @dev Implementation of the ERC20Mintable. Extension of {ERC20} that adds a minting behaviour.
  */
-abstract contract ERC20Mintable is ERC20 {
+abstract contract ERC20Mintable is ChickBase {
 
     // indicates if minting is finished
     bool private _mintingFinished = false;
